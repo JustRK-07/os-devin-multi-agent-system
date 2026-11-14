@@ -1,14 +1,14 @@
 # OS Devin — Evaluation Harness for Autonomous Coding Agents
 
-> Most agentic coding demos report a demo, not a benchmark. This project is a **measurement instrument**: a harness that runs autonomously-coded solutions against 18 hand-curated tasks with oracle-based scoring, across 4 agent configurations and 3 LLM backends, and isolates the marginal contribution of each architectural component on task success rate.
+> **Status: design and documentation foundation, not a functioning autonomous coding agent.** This repository specifies a planned evaluation harness for multi-agent coding systems, with a documented 18-task benchmark design, four experimental configurations, and three proposed LLM backends. The agent implementations, executable evaluations, and outcome measurements have **not yet been committed**.
 >
-> The product is the table, not the agent.
+> The goal is to evaluate how debugging loops, AST-based safeguards, and execution isolation affect coding-task outcomes—not to present unverified benchmark results.
 
 ---
 
 ## Headline result (placeholder)
 
-The final evaluation matrix will be reproduced here once the harness is run end-to-end. See [`docs/RESULTS.md`](docs/RESULTS.md) for the auto-generated full report.
+**No experimental success rates or benchmark results are available yet.** The following matrix describes the planned comparison; `TBD` means the experiment has not been executed. See [`docs/RESULTS.md`](docs/RESULTS.md) for the results placeholder and [`docs/EVAL_METHODOLOGY.md`](docs/EVAL_METHODOLOGY.md) for the proposed scoring methodology.
 
 | Config          | Sonnet 4.5 | GPT-5.x | Qwen-3-Coder-30B |
 |-----------------|------------|---------|------------------|
@@ -26,71 +26,43 @@ Marginal contributions (incremental stack, expected):
 
 ## Project status
 
-This is the **foundation slice**. The eval framework, task schema, scorer, and configuration scaffolding are in place. The agents, sandbox, AST guard, and full experimental matrix are planned. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the verified build status and [`docs/`](docs/) for design references.
+The **documentation foundation** is committed, including architecture, evaluation methodology, planned task schema, safety considerations, and ablation design. The executable runner, agents, scoring implementation, AST guard, Docker executor, test suite, and benchmark matrix are **not present in the current default branch**.
+
+The repository contains a documentation-validation script at [`scripts/check_docs.py`](scripts/check_docs.py). It verifies documentation structure and references; it does **not** test autonomous coding capabilities. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the code-versus-roadmap breakdown.
 
 ---
 
 ## What this is, and what it isn't
 
-**This is** a research artifact that produces a defensible measurement of agentic-coding components. The headline deliverable is a comparison table with confidence intervals, reproducible from this repo.
+**This is currently:** a documented engineering and experimental design for measuring agentic-coding components, with a repository structure prepared for future implementation.
 
-**This is not** a coding agent. We are not building the next Devin clone. The agent code in this repo exists to be *measured*, not used as a product. Anyone who runs this harness and disagrees with the methodology is welcome to fork it, modify the configs, and rerun.
+**This is not yet:** an executable four-agent LangGraph system, a working Docker-backed agent sandbox, or a completed benchmark. Descriptions of those components in the specifications are design targets, not claims of working functionality.
+
+**Intended evaluation:** compare a baseline with debugging, AST guardrails, and Docker isolation using oracle-based scoring and repeatable runs. Results should be published only after the components and experiments are actually implemented and verified.
 
 ---
 
 ## Quick start
 
-### Prerequisites
+### Inspect the documented design
 
-- Python 3.12+
-- Docker (optional, only for `full` config)
-- API keys for the LLM backends you want to evaluate (set in `.env`)
+Start with [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the verified implementation status, [`PROJECT_SPEC.md`](PROJECT_SPEC.md) for requirements, and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the proposed architecture.
 
-### Install
+### Validate documentation
+
+Requires Python 3.12+ for the planned project; the documentation checker itself uses the standard library.
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/JustRK-07/os-devin-multi-agent-system.git
 cd os-devin-multi-agent-system
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env  # then fill in your keys
-```
-
-### Run a single task
-
-```bash
-python scripts/run_eval.py \
-  --task evals/tasks/001_remove_dead_import \
-  --config configs/baseline.yaml \
-  --model sonnet-4.5
-```
-
-This writes a JSONL trace to `results/raw/` and a scored result to `results/`.
-
-### Run the full matrix
-
-```bash
-python scripts/run_matrix.py --config-matrix all --models sonnet-4.5,gpt-5,qwen-3-coder-30b --replicates 3
-```
-
-See [`docs/FLOW.md`](docs/FLOW.md) for the end-to-end execution flow.
-
-### Generate the report
-
-```bash
-python scripts/generate_report.py --results results/raw/ --output results/reports/
-```
-
-This produces [`docs/RESULTS.md`](docs/RESULTS.md) with the comparison table.
-
-### Validate this repository
-
-```bash
 python scripts/check_docs.py
 ```
 
-This is the doc-validation loop. It checks that every required document exists, has the required sections, and that cross-references resolve. See [`scripts/check_docs.py`](scripts/check_docs.py) for the contract.
+This validates documentation presence, sections, local references, and directory layout. **It does not run coding agents or benchmark tasks.**
+
+### Planned execution commands — not available yet
+
+The intended `scripts/run_eval.py`, `scripts/run_matrix.py`, and `scripts/generate_report.py` commands are specified in the design documents but are **not committed as runnable files**. Do not use them as evidence of working evaluations. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) and [`docs/FLOW.md`](docs/FLOW.md) for the proposed execution flow.
 
 ---
 
@@ -170,7 +142,9 @@ os-devin-multi-agent-system/
 
 ## Technology stack
 
-| Layer | Choice | Reason |
+**Design targets, not a verified installed or executable stack.** The current default branch primarily contains specifications, empty package directories, and a Python documentation checker.
+
+| Layer | Planned technology | Reason |
 |---|---|---|
 | Language | Python 3.12 | LLM ecosystem is Python-native |
 | Agent runtime | LangGraph | Stateful graphs, clean retry/branching |
@@ -205,16 +179,14 @@ os-devin-multi-agent-system/
 
 ## Reproduction
 
-A reviewer who wants to reproduce the headline numbers should:
+There is **no completed benchmark to reproduce** in this branch. To inspect the current artifact:
 
-1. Clone the repo
-2. `pip install -r requirements.txt`
-3. Set API keys in `.env`
-4. `python scripts/run_matrix.py --config-matrix all --models sonnet-4.5,gpt-5,qwen-3-coder-30b --replicates 3`
-5. `python scripts/generate_report.py`
-6. Compare your `results/reports/comparison.md` to the headline table in [`README.md`](README.md)
+1. Clone this repository.
+2. Run `python scripts/check_docs.py` to check documentation structure.
+3. Read [`docs/EVAL_METHODOLOGY.md`](docs/EVAL_METHODOLOGY.md) and [`docs/CONFIG_ABLATION.md`](docs/CONFIG_ABLATION.md) for the planned experimental design.
+4. Read [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) to distinguish completed work from backlog items.
 
-The runs are reproducible modulo model updates. If OpenAI/Anthropic/Alibaba update their model weights, expect drift. Document the model version in your run header — the harness does this automatically.
+Once the harness and experimental matrix are implemented, this section should be replaced with tested installation instructions, exact model identifiers and versions, executable commands, and links to measured results.
 
 ---
 
@@ -226,4 +198,6 @@ See [`LICENSE`](LICENSE).
 
 ## Status
 
-This project is in the **foundation slice**. The doc set is complete. The eval framework, task schema, agent scaffolding, scorer, and configuration layer are next. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the granular task list.
+**Documentation and design foundation only (default branch).** The published repository does not yet substantiate claims that a four-agent pipeline executes code, that Docker sandboxes run tests, or that an AST safeguard prevents edits. Those features are planned for future milestones in [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
+
+For a recruiter or reviewer, the strongest evidence currently available here is the architecture/evaluation design and its documentation-validation script. Any additional working implementation should be committed with tests and reproducible examples before being represented as complete.
