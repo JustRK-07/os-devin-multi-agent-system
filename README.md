@@ -1,6 +1,6 @@
 # OS Devin — Executable Multi-Agent Coding Harness
 
-> **Status:** runnable six-role MVP with unit tests, deterministic demo and a live-model adapter. The scripted demo is not evidence of general autonomous coding ability. Docker and LangGraph are implemented as optional execution modes but must be verified in an environment with those dependencies installed. Large-scale evaluation results are **not available**.
+> **Status:** runnable six-role MVP with unit tests, deterministic demo and a live-model adapter. The scripted demo is not evidence of general autonomous coding ability. Optional Docker and LangGraph modes passed their combined end-to-end smoke test in GitHub Actions CI. Large-scale evaluation results are **not available**.
 
 ## Headline result
 
@@ -10,7 +10,7 @@ The local scripted calculator smoke test passes after one deliberate failed atte
 
 **Implemented and locally tested:** six concrete workflow roles (Planner, Coder, Reviewer, Security, Tester, Debugger), bounded retries, Python AST import/call indexing, file scope and path guards, basic AST change checks, structured JSONL traces, diff patch output, unit tests, and a deterministic failing-then-passing sample. A standard-library graph runner is the default.
 
-**Implemented but not verified in this workspace:** Docker sandbox invocation and optional LangGraph integration. A live OpenAI-compatible chat-completions client accepts API keys and remote models; end-to-end external provider outcomes are not represented as tested. These modes require their actual dependencies and credentials. The Docker policy is defense-in-depth, not a guarantee against hostile containers.
+**CI-verified:** the Docker sandbox and LangGraph integration passed the combined end-to-end smoke test in GitHub Actions (using the scripted demo model). A live OpenAI-compatible chat-completions client accepts API keys and remote models, but end-to-end external model outcomes have **not** been tested or measured. Docker and LangGraph require installed dependencies. The Docker policy is defense-in-depth, not a guarantee against hostile containers.
 
 **Not implemented:** general multi-language AST dependency graphs, fully fledged GitHub PR automation, arbitrary build system install, browser dashboard, production-grade adversarial security audit, or published cross-model benchmarks. The design documents in `docs/` describe future work; they are not all live features.
 
@@ -56,7 +56,7 @@ pip install -e '.[graph]'
 python -m harness.cli demo --graph langgraph --sandbox docker
 ```
 
-This uses real `StateGraph` nodes and conditional edges for review, security and test retries. Without the optional package the default `--graph native` runs the exact same roles in a standard-library state-machine. No claim is made that LangGraph mode was exercised in environments without it installed.
+This uses real `StateGraph` nodes and conditional edges for review, security and test retries. Without the optional package the default `--graph native` runs the exact same roles in a standard-library state-machine. GitHub Actions installs LangGraph and exercises this route with Docker; local use still requires installing the extra.
 
 ## Project structure
 
