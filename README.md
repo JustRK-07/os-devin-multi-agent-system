@@ -1,203 +1,99 @@
-# OS Devin — Evaluation Harness for Autonomous Coding Agents
+# OS Devin — Executable Multi-Agent Coding Harness
 
-> **Status: design and documentation foundation, not a functioning autonomous coding agent.** This repository specifies a planned evaluation harness for multi-agent coding systems, with a documented 18-task benchmark design, four experimental configurations, and three proposed LLM backends. The agent implementations, executable evaluations, and outcome measurements have **not yet been committed**.
->
-> The goal is to evaluate how debugging loops, AST-based safeguards, and execution isolation affect coding-task outcomes—not to present unverified benchmark results.
+> **Status:** runnable six-role MVP with unit tests, deterministic demo and a live-model adapter. The scripted demo is not evidence of general autonomous coding ability. Docker and LangGraph are implemented as optional execution modes but must be verified in an environment with those dependencies installed. Large-scale evaluation results are **not available**.
 
----
+## Headline result
 
-## Headline result (placeholder)
-
-**No experimental success rates or benchmark results are available yet.** The following matrix describes the planned comparison; `TBD` means the experiment has not been executed. See [`docs/RESULTS.md`](docs/RESULTS.md) for the results placeholder and [`docs/EVAL_METHODOLOGY.md`](docs/EVAL_METHODOLOGY.md) for the proposed scoring methodology.
-
-| Config          | Sonnet 4.5 | GPT-5.x | Qwen-3-Coder-30B |
-|-----------------|------------|---------|------------------|
-| baseline        | _TBD_      | _TBD_   | _TBD_            |
-| +debug          | _TBD_      | _TBD_   | _TBD_            |
-| +ast            | _TBD_      | _TBD_   | _TBD_            |
-| full            | _TBD_      | _TBD_   | _TBD_            |
-
-Marginal contributions (incremental stack, expected):
-- `baseline → +debug`: self-healing retry loop
-- `+debug → +ast`: AST pre-edit guard (scope discipline)
-- `+ast → full`: Docker-managed per-task isolation
-
----
+The local scripted calculator smoke test passes after one deliberate failed attempt and one Debugger repair (`python -m harness.cli demo --sandbox local --allow-unsafe-local`). This demonstrates the retry wiring, not a meaningful LLM success rate. There are **no 18-task / 50-task / 648-run benchmark results**; see [results methodology](docs/EVAL_METHODOLOGY.md).
 
 ## Project status
 
-The **documentation foundation** is committed, including architecture, evaluation methodology, planned task schema, safety considerations, and ablation design. The executable runner, agents, scoring implementation, AST guard, Docker executor, test suite, and benchmark matrix are **not present in the current default branch**.
+**Implemented and locally tested:** six concrete workflow roles (Planner, Coder, Reviewer, Security, Tester, Debugger), bounded retries, Python AST import/call indexing, file scope and path guards, basic AST change checks, structured JSONL traces, diff patch output, unit tests, and a deterministic failing-then-passing sample. A standard-library graph runner is the default.
 
-The repository contains a documentation-validation script at [`scripts/check_docs.py`](scripts/check_docs.py). It verifies documentation structure and references; it does **not** test autonomous coding capabilities. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the code-versus-roadmap breakdown.
+**Implemented but not verified in this workspace:** Docker sandbox invocation and optional LangGraph integration. A live OpenAI-compatible chat-completions client accepts API keys and remote models; end-to-end external provider outcomes are not represented as tested. These modes require their actual dependencies and credentials. The Docker policy is defense-in-depth, not a guarantee against hostile containers.
 
----
-
-## What this is, and what it isn't
-
-**This is currently:** a documented engineering and experimental design for measuring agentic-coding components, with a repository structure prepared for future implementation.
-
-**This is not yet:** an executable four-agent LangGraph system, a working Docker-backed agent sandbox, or a completed benchmark. Descriptions of those components in the specifications are design targets, not claims of working functionality.
-
-**Intended evaluation:** compare a baseline with debugging, AST guardrails, and Docker isolation using oracle-based scoring and repeatable runs. Results should be published only after the components and experiments are actually implemented and verified.
-
----
+**Not implemented:** general multi-language AST dependency graphs, fully fledged GitHub PR automation, arbitrary build system install, browser dashboard, production-grade adversarial security audit, or published cross-model benchmarks. The design documents in `docs/` describe future work; they are not all live features.
 
 ## Quick start
 
-### Inspect the documented design
-
-Start with [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) for the verified implementation status, [`PROJECT_SPEC.md`](PROJECT_SPEC.md) for requirements, and [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the proposed architecture.
-
-### Validate documentation
-
-Requires Python 3.12+ for the planned project; the documentation checker itself uses the standard library.
+Requires Python 3.11+ (3.12 recommended). Core demo and unit tests have **no third-party dependencies**. Clone the repository:
 
 ```bash
 git clone https://github.com/JustRK-07/os-devin-multi-agent-system.git
 cd os-devin-multi-agent-system
-python scripts/check_docs.py
+python -m unittest discover -s tests -v
 ```
 
-This validates documentation presence, sections, local references, and directory layout. **It does not run coding agents or benchmark tasks.**
+Run the intentionally scripted sample, **only for trusted bundled fixture code**:
 
-### Planned execution commands — not available yet
+```bash
+python -m harness.cli demo --sandbox local --allow-unsafe-local --output /tmp/osdevin-demo
+```
 
-The intended `scripts/run_eval.py`, `scripts/run_matrix.py`, and `scripts/generate_report.py` commands are specified in the design documents but are **not committed as runnable files**. Do not use them as evidence of working evaluations. See [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) and [`docs/FLOW.md`](docs/FLOW.md) for the proposed execution flow.
+The demo creates a disposable copy of `evals/tasks/demo_calculator/repo_before`, attempts a deliberately incorrect patch, runs its two failing tests, repairs the patch, and re-runs tests. Output includes a `.patch` file, a machine-readable `.json` summary, and a `.jsonl` event trace. **The input folder is unchanged**. This sample uses scripted `DemoModel` responses; it does not call an LLM.
 
----
+### Run a real coding task
+
+Install/start Docker and have an available `python:3.12-slim` image (pull the image before running if needed). Set `OPENAI_API_KEY` in your shell, not in tracked source files. The default provider uses `https://api.openai.com/v1`; optionally set `OPENAI_BASE_URL` for a compatible hosted endpoint.
+
+```bash
+export OPENAI_API_KEY='your-key-from-a-secret-manager'
+docker pull python:3.12-slim
+python -m harness.cli run \
+  --repo /path/to/trusted-python-project \
+  --task 'Fix the pagination off-by-one error and preserve the API' \
+  --model gpt-4o-mini \
+  --test-command 'python -m unittest discover -s tests -v' \
+  --sandbox docker --max-retries 2 --output /tmp/osdevin-runs
+```
+
+The model proposes complete-file edits; the Reviewer and Security gate must approve them before testing. `run` does **not** apply edits to your input repository. Review the generated patch before applying manually with `git apply`. The sample Docker runner is intentionally restrictive: no network, no privileges, read-only checkout, limited CPU, memory and processes. It supports tests needing only the Python standard library or dependencies already included in the image. For dependency-heavy repositories, customize a trusted local Docker image in the executor code rather than relaxing the security policy.
+
+### LangGraph execution
+
+```bash
+pip install -e '.[graph]'
+python -m harness.cli demo --graph langgraph --sandbox docker
+```
+
+This uses real `StateGraph` nodes and conditional edges for review, security and test retries. Without the optional package the default `--graph native` runs the exact same roles in a standard-library state-machine. No claim is made that LangGraph mode was exercised in environments without it installed.
 
 ## Project structure
 
+```text
+harness/
+  cli.py                 CLI and demo/run modes
+  engine.py              workflow state, agents, retry routing, patch export
+  ast_guard.py           path/scope, Python AST and credential heuristics
+  intelligence.py        module import and function-call indexing
+  llm/client.py          OpenAI-compatible JSON protocol + scripted demo provider
+  sandbox/runner.py      Docker or explicitly opted-in unsafe local test execution
+  events/trace.py        structured JSONL event records
+evals/tasks/demo_calculator/  trusted failing-first sample
+scripts/run_eval.py       compatibility command for real model runs
+tests/test_harness.py     unit tests and end-to-end scripted regression
+.github/workflows/ci.yml unit tests, doc checker, demo
 ```
-os-devin-multi-agent-system/
-├── README.md                              # this file
-├── PROJECT_SPEC.md                        # full project specification
-├── PROJECT_OVERVIEW.md                    # status, what's built vs. planned
-├── LICENSE
-├── pyproject.toml
-├── requirements.txt
-├── .env.example
-├── docs/
-│   ├── ARCHITECTURE.md                    # component diagram, data flow
-│   ├── FLOW.md                            # end-to-end execution flow
-│   ├── EVAL_METHODOLOGY.md                # scoring, metrics, statistical protocol
-│   ├── TASK_DESIGN.md                     # how to author a task
-│   ├── CONFIG_ABLATION.md                 # the 4 configs and what each isolates
-│   ├── SAFETY.md                          # safety baseline + experimental isolation
-│   ├── RESULTS.md                         # auto-generated, the headline table
-│   ├── FAILURE_ANALYSIS.md                # categorized failure modes
-│   └── TRACE_SAMPLES.md                   # representative full traces
-├── harness/
-│   ├── runner.py
-│   ├── scorer.py
-│   ├── failure_class.py
-│   ├── ast_guard.py
-│   ├── sandbox/
-│   ├── rubric/
-│   ├── tools/
-│   ├── agents/
-│   ├── llm/
-│   │   ├── client.py
-│   │   ├── prompts.py
-│   │   └── prompts/
-│   └── events/
-│       └── trace.py
-├── configs/
-│   ├── baseline.yaml
-│   ├── plus_debug.yaml
-│   ├── plus_ast.yaml
-│   └── full.yaml
-├── evals/
-│   ├── tasks/
-│   │   └── <task_id>/
-│   │       ├── task.json
-│   │       ├── repo_before/
-│   │       ├── repo_after/
-│   │       ├── oracle.py
-│   │       └── rubric.json
-│   ├── loader.py
-│   └── validate.py
-├── scripts/
-│   ├── run_eval.py                        # run one (task, config, model)
-│   ├── run_matrix.py                      # run the full matrix
-│   ├── compare_runs.py                    # comparison tables
-│   ├── generate_report.py                 # produce RESULTS.md
-│   └── check_docs.py                      # doc-validation loop
-├── results/
-│   ├── raw/                               # JSONL traces
-│   └── reports/                           # generated markdown
-└── tests/
-    ├── test_failure_class.py
-    ├── test_rubric.py
-    ├── test_prompt_registry.py
-    ├── test_sandbox_local_safe.py
-    ├── test_sandbox_docker.py
-    ├── test_scorer.py
-    ├── test_ast_guard.py
-    ├── test_loader.py
-    └── test_runner.py
-```
-
----
 
 ## Technology stack
 
-**Design targets, not a verified installed or executable stack.** The current default branch primarily contains specifications, empty package directories, and a Python documentation checker.
-
-| Layer | Planned technology | Reason |
-|---|---|---|
-| Language | Python 3.12 | LLM ecosystem is Python-native |
-| Agent runtime | LangGraph | Stateful graphs, clean retry/branching |
-| LLM access | LiteLLM | Provider-agnostic, swap Sonnet/GPT/Qwen with one flag |
-| Sandbox | Docker SDK + local-safe preexec | Safety baseline + experimental isolation |
-| AST analysis | tree-sitter-python | Multi-language capable, fast |
-| Scorer | pytest + ruff + custom checks | Deterministic, no LLM in the loop |
-| Output | JSONL traces + markdown reports | Diffable, replayable, version-controllable |
-| Tests | pytest | Standard |
-| CI | GitHub Actions | Standard |
-
----
+Python 3.11+ standard library for the default runner; optional **LangGraph** for graph orchestration; OpenAI-compatible Chat Completions JSON adapter for live inference; **Docker** for resource-limited, offline tests; `ast` for Python source indexing/guards; `unittest` and GitHub Actions for repeatable checks. There is no Next.js dashboard or LiteLLM integration in this MVP.
 
 ## Documentation index
 
-| Document | Purpose |
-|---|---|
-| [`README.md`](README.md) | This file — entry point, thesis, quick start |
-| [`PROJECT_SPEC.md`](PROJECT_SPEC.md) | Problem statement, goals, requirements, constraints |
-| [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) | What's built, what's not, verified status |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Component diagram, data flow, module breakdown |
-| [`docs/FLOW.md`](docs/FLOW.md) | End-to-end execution: from CLI invocation to scored result |
-| [`docs/EVAL_METHODOLOGY.md`](docs/EVAL_METHODOLOGY.md) | The four metric families, failure class taxonomy, statistical protocol |
-| [`docs/TASK_DESIGN.md`](docs/TASK_DESIGN.md) | Task schema, difficulty mix, authoring guide |
-| [`docs/CONFIG_ABLATION.md`](docs/CONFIG_ABLATION.md) | The four configs and what each isolates |
-| [`docs/SAFETY.md`](docs/SAFETY.md) | Safety baseline + experimental isolation levels |
-| [`docs/RESULTS.md`](docs/RESULTS.md) | Auto-generated experimental results |
-| [`docs/FAILURE_ANALYSIS.md`](docs/FAILURE_ANALYSIS.md) | Categorized failure modes |
-| [`docs/TRACE_SAMPLES.md`](docs/TRACE_SAMPLES.md) | Representative full traces |
-
----
+The design specifications are retained as future targets, not all implemented code: [overview](PROJECT_OVERVIEW.md), [spec](PROJECT_SPEC.md), [architecture](docs/ARCHITECTURE.md), [execution flow](docs/FLOW.md), [safety](docs/SAFETY.md), [evaluation methodology](docs/EVAL_METHODOLOGY.md), and [results](docs/RESULTS.md).
 
 ## Reproduction
 
-There is **no completed benchmark to reproduce** in this branch. To inspect the current artifact:
+1. Run the unit tests as shown above; the test suite includes an end-to-end scripted recovery scenario and a zero-retry failure case.
+2. Run the demo; inspect `.jsonl`, `.json`, and `.patch` in the chosen output folder.
+3. To test Docker isolation, run `python -m harness.cli demo --sandbox docker` on a host with Docker and the image installed.
+4. To test live LLMs, supply a valid key and run the `run` command against a separate test repository; real results vary with the model and task and must be measured.
 
-1. Clone this repository.
-2. Run `python scripts/check_docs.py` to check documentation structure.
-3. Read [`docs/EVAL_METHODOLOGY.md`](docs/EVAL_METHODOLOGY.md) and [`docs/CONFIG_ABLATION.md`](docs/CONFIG_ABLATION.md) for the planned experimental design.
-4. Read [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md) to distinguish completed work from backlog items.
+## Safety and limitations
 
-Once the harness and experimental matrix are implemented, this section should be replaced with tested installation instructions, exact model identifiers and versions, executable commands, and links to measured results.
-
----
+**Do not run untrusted repository test code with `--sandbox local`.** Its resource limits are not a security boundary. Docker provides isolation controls but is not a hardened production sandbox and should not run on a privileged or sensitive host without further review. Code can contain prompt injections: the LLM is instructed to treat source files as untrusted, and all generated edits must pass deterministic gates, but those gates are incomplete and can be bypassed. Never expose secrets in source sent to a model. The input repository remains unmodified; patch application is a separate human review step.
 
 ## License
 
-See [`LICENSE`](LICENSE).
-
----
-
-## Status
-
-**Documentation and design foundation only (default branch).** The published repository does not yet substantiate claims that a four-agent pipeline executes code, that Docker sandboxes run tests, or that an AST safeguard prevents edits. Those features are planned for future milestones in [`PROJECT_OVERVIEW.md`](PROJECT_OVERVIEW.md).
-
-For a recruiter or reviewer, the strongest evidence currently available here is the architecture/evaluation design and its documentation-validation script. Any additional working implementation should be committed with tests and reproducible examples before being represented as complete.
+[MIT](LICENSE).
