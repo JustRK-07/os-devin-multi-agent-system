@@ -1,0 +1,6 @@
+{
+  "id": "demo_calculator",
+  "description": "Fix calculator.add so that it adds two integers.",
+  "test_command": "python -m unittest discover -s tests -v",
+  "note": "DemoModel is scripted and deliberately injects a failing first attempt. This is a wiring smoke test, not an LLM evaluation."
+}

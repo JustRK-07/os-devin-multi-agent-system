@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "os-devin-harness"
+version = "0.1.0"
+description = "Auditable multi-role coding harness with bounded retries and Docker execution"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+graph = ["langgraph>=0.2,<2"]
+
+[project.scripts]
+os-devin = "harness.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["harness*"]
