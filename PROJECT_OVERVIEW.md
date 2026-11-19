@@ -10,7 +10,7 @@ The original specification, architecture, flow, evaluation design, and safety re
 
 ## What is implemented today
 
-The native Python runner supports a Planner (structured file scope), Coder (full-file JSON edits), Reviewer (model approval), Security (AST/path/scope checks), Tester (Docker or explicit trusted local execution), and Debugger (test-feedback retry). It copies the repository to a disposable workspace, generates JSONL events, and exports a reviewable patch. It includes import/function-call AST indexing, an OpenAI-compatible API adapter, an intentionally scripted demo provider, and unit tests. A separate LangGraph adapter uses `StateGraph` when installed; both routes use the same agent methods. Unit tests and the scripted local demo have been executed. Docker and LangGraph integration have not been executed in the current environment.
+The native Python runner supports a Planner (structured file scope), Coder (full-file JSON edits), Reviewer (model approval), Security (AST/path/scope checks), Tester (Docker or explicit trusted local execution), and Debugger (test-feedback retry). It copies the repository to a disposable workspace, generates JSONL events, and exports a reviewable patch. It includes import/function-call AST indexing, an OpenAI-compatible API adapter, an intentionally scripted demo provider, and unit tests. A separate LangGraph adapter uses `StateGraph` when installed; both routes use the same agent methods. Unit tests and the scripted local demo have been executed, and the combined LangGraph/Docker demo has passed GitHub Actions CI. Live LLM provider integration and broader benchmark performance remain unverified.
 
 ## What is not implemented yet
 
