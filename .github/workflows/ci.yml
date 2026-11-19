@@ -16,3 +16,16 @@ jobs:
         run: python -m harness.cli demo --sandbox local --allow-unsafe-local --output /tmp/osdevin-ci
       - name: Documentation links
         run: python scripts/check_docs.py
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install LangGraph
+        run: python -m pip install -e '.[graph]'
+      - name: Docker image for offline test execution
+        run: docker pull python:3.12-slim
+      - name: LangGraph and Docker end-to-end smoke test
+        run: python -m harness.cli demo --graph langgraph --sandbox docker --output /tmp/osdevin-integration
